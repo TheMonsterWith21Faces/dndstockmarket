@@ -1,0 +1,37 @@
+{
+  "currentDay": 1,
+  "companies": {
+    "C001": {
+      "id": "C001",
+      "name": "Magic Company",
+      "listed": true,
+      "multiplier": 1,
+      "volatilityTier": 3,
+      "percentUnclaimed": 0.4338,
+      "playerOwnedFraction": 0,
+      "lastChangePct": 0.046,
+      "lastModifiedPct": 0.046,
+      "lastChangeAmount": 1.35,
+      "catWindMod": 1,
+      "staticValuation": 67.18,
+      "gravityMod": 0.97,
+      "currentPrice": 66.85,
+      "notes": "",
+      "symbol": "MAGC"
+    }
+  },
+  "players": {},
+  "priceHistory": [
+    {
+      "day": 1,
+      "companyId": "C001",
+      "price": 66.85
+    }
+  ],
+  "pivEvents": [],
+  "dailyNews": {},
+  "settings": {
+    "meanReversionRate": 0.05,
+    "tickerSpeedSeconds": 40
+  }
+}

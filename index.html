@@ -1,0 +1,1303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Thrall Street Journal</title>
+  <style>
+    :root {
+      --bg: #05050a;
+      --bg-panel: #11131a;
+      --border: #2a2f3a;
+      --accent: #4fd5ff;
+      --accent-soft: rgba(79, 213, 255, 0.16);
+      --text-main: #f2f3f7;
+      --text-muted: #8b90a0;
+      --danger: #ff4f6a;
+      --success: #58d58a;
+      --ticker-speed: 40s;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #111423 0, #05050a 55%);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      padding: 0.75rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(90deg, rgba(79, 213, 255, 0.08), transparent);
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 1.3rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+
+    header .meta {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    main {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      padding: 1rem;
+    }
+
+    #app {
+      width: 100%;
+      max-width: 1200px;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .section {
+      background: linear-gradient(145deg, rgba(22, 25, 38, 0.95), rgba(9, 11, 20, 0.98));
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      box-shadow:
+        0 18px 40px rgba(0, 0, 0, 0.75),
+        inset 0 1px 0 rgba(255, 255, 255, 0.02);
+      padding: 0.85rem 1rem 1rem;
+    }
+
+    .section h2 {
+      margin: 0 0 0.6rem 0;
+      font-size: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: var(--text-muted);
+    }
+
+    button {
+      background: radial-gradient(circle at 20% 0, rgba(79, 213, 255, 0.4), rgba(79, 213, 255, 0.2));
+      border-radius: 999px;
+      border: 1px solid rgba(79, 213, 255, 0.6);
+      color: var(--text-main);
+      padding: 0.25rem 0.8rem;
+      font-size: 0.85rem;
+      cursor: pointer;
+      margin-right: 0.3rem;
+    }
+
+    button:hover { filter: brightness(1.1); }
+    button:active { transform: translateY(1px); filter: brightness(0.95); }
+
+    input, select {
+      background: #141724;
+      border-radius: 6px;
+      border: 1px solid #34384a;
+      color: var(--text-main);
+      padding: 0.2rem 0.3rem;
+      font-size: 0.85rem;
+    }
+
+    input[type="number"] { text-align: right; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.8rem;
+    }
+
+    th, td {
+      padding: 0.3rem 0.35rem;
+      border-bottom: 1px solid rgba(52, 56, 74, 0.7);
+      text-align: left;
+      white-space: nowrap;
+    }
+
+    th {
+      font-weight: 600;
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      position: relative; /* for resizer */
+    }
+
+    tr:nth-child(even) td { background: rgba(18, 20, 32, 0.55); }
+    tr:hover td { background: rgba(52, 56, 74, 0.4); }
+
+    .pos { color: var(--success); }
+    .neg { color: var(--danger); }
+
+    .headline { margin: 0.15rem 0; font-size: 0.9rem; }
+
+    /* Ticker */
+    #ticker {
+      border-top: 1px solid var(--border);
+      background: radial-gradient(circle at 0 0, rgba(79, 213, 255, 0.12), #05050a);
+      padding: 0.25rem 0.75rem;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      position: sticky;
+      bottom: 0;
+      z-index: 20;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+
+    #tickerInner {
+      display: inline-block;
+      white-space: nowrap;
+      animation: scrollTicker var(--ticker-speed) linear infinite;
+    }
+
+    @keyframes scrollTicker {
+      from { transform: translateX(0); }
+      to { transform: translateX(-100%); }
+    }
+
+    svg.chart {
+      border-radius: 10px;
+      background: radial-gradient(circle at top, rgba(79, 213, 255, 0.12), rgba(5, 7, 15, 0.9));
+      border: 1px solid rgba(79, 213, 255, 0.2);
+      display: block;
+    }
+
+    .flex-row {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .flex-row > * {
+      flex: 1 1 0;
+      min-width: 0;
+    }
+
+    .edit-input {
+      width: 100%;
+      font-size: 0.78rem;
+      padding: 0.15rem 0.25rem;
+    }
+
+    .edit-checkbox {
+      transform: scale(1.1);
+    }
+
+    /* Column resizer for edit table */
+    .col-resizer {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 5px;
+      height: 100%;
+      cursor: col-resize;
+      user-select: none;
+      touch-action: none;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Thrall Street Journal</h1>
+      <div class="meta">
+        <span>Day <span id="currentDay">1</span></span>
+        &nbsp;•&nbsp;
+        <span id="viewName">DM</span> View
+      </div>
+    </div>
+    <div class="meta">
+      Because you don't deserve better™
+    </div>
+  </header>
+
+  <main>
+    <div id="app"></div>
+  </main>
+
+  <div id="ticker">
+    <div id="tickerInner"></div>
+  </div>
+
+  <input type="file" id="fileInput" accept="application/json" style="display:none;" />
+
+  <script>
+  
+  function generateSequentialCompanyId() {
+  ensureStructure();
+  const ids = Object.keys(db.companies || {});
+  let maxNum = 0;
+  let pad = 3; // default C001 style
+
+  ids.forEach(id => {
+    const m = /^C(\d+)$/.exec(id);
+    if (m) {
+      const num = parseInt(m[1], 10);
+      if (num > maxNum) {
+        maxNum = num;
+        pad = m[1].length; // keep same zero-padding as existing IDs
+      }
+    }
+  });
+
+  const next = maxNum + 1;
+  const padded = String(next).padStart(pad, "0");
+  return "C" + padded;
+}
+
+  
+  
+    // ---------- DB + STORAGE ----------
+
+    const STORAGE_KEY = "tesseraStockMarketDBv1";
+
+    const defaultDB = {
+      currentDay: 1,
+      companies: {},
+      priceHistory: [],
+      pivEvents: [],
+      dailyNews: {},
+      settings: {
+        meanReversionRate: 0.10,
+        tickerSpeedSeconds: 40
+      }
+    };
+
+    let db = loadDB();
+
+    function loadDB() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          normalizeDB(parsed);
+          return parsed;
+        }
+      } catch (e) {
+        console.error("Failed to load DB from storage", e);
+      }
+      const clone = JSON.parse(JSON.stringify(defaultDB));
+      return clone;
+    }
+
+    function saveDB() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
+      } catch (e) {
+        console.error("Failed to save DB", e);
+      }
+    }
+
+    function ensureStructure() {
+      if (!db) db = JSON.parse(JSON.stringify(defaultDB));
+      if (!db.companies) db.companies = {};
+      if (!db.priceHistory) db.priceHistory = [];
+      if (!db.pivEvents) db.pivEvents = [];
+      if (!db.dailyNews) db.dailyNews = {};
+      if (!db.settings) db.settings = { meanReversionRate: 0.10, tickerSpeedSeconds: 40 };
+      if (!db.settings.tickerSpeedSeconds) db.settings.tickerSpeedSeconds = 40;
+      if (typeof db.settings.meanReversionRate !== "number") db.settings.meanReversionRate = 0.10;
+      if (typeof db.currentDay !== "number" || db.currentDay < 1) db.currentDay = 1;
+    }
+
+    function normalizeDB(data) {
+      if (!data) return;
+      if (!data.companies) data.companies = {};
+      if (!data.priceHistory) data.priceHistory = [];
+      if (!data.pivEvents) data.pivEvents = [];
+      if (!data.dailyNews) data.dailyNews = {};
+      if (!data.settings) data.settings = { meanReversionRate: 0.10, tickerSpeedSeconds: 40 };
+      if (!data.settings.tickerSpeedSeconds) data.settings.tickerSpeedSeconds = 40;
+      if (typeof data.settings.meanReversionRate !== "number") data.settings.meanReversionRate = 0.10;
+      if (typeof data.currentDay !== "number" || data.currentDay < 1) data.currentDay = 1;
+
+      if (Array.isArray(data.companies)) {
+        const obj = {};
+        data.companies.forEach((c, idx) => {
+          const id = c.id || ("C" + String(idx + 1).padStart(3, "0"));
+          obj[id] = { ...c, id };
+        });
+        data.companies = obj;
+      }
+
+      for (const id in data.companies) {
+        const c = data.companies[id];
+        c.id = c.id || id;
+        if (c.volatilityTier === undefined && c.volatility !== undefined) {
+          c.volatilityTier = c.volatility;
+        }
+        if (c.volatilityTier === undefined) c.volatilityTier = 2;
+
+        if (c.playerOwnedFraction === undefined && c.playerOwned !== undefined) {
+          c.playerOwnedFraction = c.playerOwned;
+        }
+        if (c.playerOwnedFraction === undefined) c.playerOwnedFraction = 0.0;
+
+        if (c.currentPrice === undefined && c.finalPrice !== undefined) {
+          c.currentPrice = c.finalPrice;
+        }
+        if (c.currentPrice === undefined) c.currentPrice = c.staticValuation || 1;
+
+        if (c.catWindMod === undefined) c.catWindMod = 1.0;
+        if (c.staticValuation === undefined) c.staticValuation = c.currentPrice;
+        if (c.gravityMod === undefined) c.gravityMod = 1.0;
+
+        if (c.lastChangePct === undefined) c.lastChangePct = 0;
+        if (c.lastModifiedPct === undefined) c.lastModifiedPct = c.lastChangePct;
+        if (c.lastChangeAmount === undefined) c.lastChangeAmount = 0;
+
+        if (c.listed === undefined) c.listed = true;
+      }
+    }
+
+    // ---------- UTILITIES ----------
+
+    function getView() {
+      const params = new URLSearchParams(window.location.search);
+      return params.get("view") || "dm";
+    }
+
+    function formatPct(v) {
+      const pct = (v * 100).toFixed(2);
+      const cls = v > 0 ? "pos" : (v < 0 ? "neg" : "");
+      const sign = v > 0 ? "+" : (v < 0 ? "" : "");
+      return `<span class="${cls}">${sign}${pct}%</span>`;
+    }
+
+    function formatGold(v) {
+      return v.toFixed(2) + " gp";
+    }
+
+    function getYesterdayPrices(day) {
+      const map = {};
+      const targetDay = day - 1;
+      if (targetDay < 1) return map;
+      for (const row of db.priceHistory || []) {
+        if (row.day === targetDay) {
+          map[row.companyId] = row.price;
+        }
+      }
+      return map;
+    }
+
+    // ---------- DAILY RANDOM PERCENT (BUCKET DISTRIBUTION) ----------
+
+    function getDailyRandomPct() {
+      const r = Math.random();
+      let min, max;
+
+      if (r < 0.80) {
+        // 80%: 0–5%
+        min = 0.0;
+        max = 0.05;
+      } else if (r < 0.92) {
+        // 12%: 5–12%
+        min = 0.05;
+        max = 0.12;
+      } else if (r < 0.98) {
+        // 6%: 12–23%
+        min = 0.12;
+        max = 0.23;
+      } else if (r < 0.999) {
+        // 1.9%: 23–30.29%
+        min = 0.23;
+        max = 0.3029;
+      } else if (r < 0.9999) {
+        // 0.09%: 30.30–182%
+        min = 0.303;
+        max = 1.82;
+      } else {
+        // 0.01%: 182–726%
+        min = 1.82;
+        max = 7.26;
+      }
+
+      const magnitude = min + Math.random() * (max - min);
+      const sign = Math.random() < 0.5 ? -1 : 1;
+      return sign * magnitude;
+    }
+
+    // ---------- MARKET LOGIC (WITH CATASTROPHE / WINDFALL) ----------
+
+    function advanceMarketDay() {
+      ensureStructure();
+      const today = db.currentDay || 1;
+      const tomorrow = today + 1;
+
+      const meanReversionRate =
+        (db.settings && typeof db.settings.meanReversionRate === "number")
+          ? db.settings.meanReversionRate
+          : 0.10;
+
+      const maxDailyMove = 7.26; // ±726% cap
+      const eventsToday = [];
+
+      for (const id in db.companies) {
+        const c = db.companies[id];
+        if (!c.listed) continue;
+
+        const oldPrice = c.currentPrice;
+        const staticVal = c.staticValuation || oldPrice;
+        const gravity = c.gravityMod || 1.0;
+        const target = staticVal * gravity;
+
+        // Mean reversion towards target, based on percent diff vs current price
+        let reversionPct = 0;
+        if (oldPrice > 0) {
+          const diffPct = (target - oldPrice) / oldPrice;
+          reversionPct = meanReversionRate * diffPct;
+        }
+
+        // Base random movement
+        const baseNoise = getDailyRandomPct();
+
+        // Catastrophe / windfall event
+        const catWindMod = c.catWindMod || 1.0;
+        const catastropheProb = 0.001 * catWindMod;
+        const windfallProb = 0.001 * catWindMod;
+        const roll = Math.random();
+        let eventType = null;
+        let eventPct = 0;
+        let staticChangePct = 0;
+
+        if (roll < catastropheProb) {
+          eventType = "catastrophe";
+          // big negative: 20–99%
+          const mag = 0.20 + Math.random() * 0.79;
+          eventPct = -mag;
+          const statMag = 0.08 + Math.random() * 0.39;
+          staticChangePct = -statMag;
+        } else if (roll < catastropheProb + windfallProb) {
+          eventType = "windfall";
+          // big positive: 20–99%
+          const mag = 0.20 + Math.random() * 0.79;
+          eventPct = mag;
+          const statMag = 0.08 + Math.random() * 0.39;
+          staticChangePct = statMag;
+        }
+
+        // Apply static valuation change if event
+        if (eventType) {
+          const oldStatic = c.staticValuation || oldPrice;
+          const newStatic = Math.max(0.01, oldStatic * (1 + staticChangePct));
+          c.staticValuation = newStatic;
+        }
+
+        // Total pct change
+        let pctChange = reversionPct + baseNoise + eventPct;
+
+        if (pctChange > maxDailyMove) pctChange = maxDailyMove;
+        if (pctChange < -maxDailyMove) pctChange = -maxDailyMove;
+
+        const newPrice = Math.max(0.01, oldPrice * (1 + pctChange));
+
+        c.lastChangePct = pctChange;
+        c.lastModifiedPct = pctChange;
+        c.lastChangeAmount = newPrice - oldPrice;
+        c.currentPrice = newPrice;
+
+        db.priceHistory.push({
+          day: tomorrow,
+          companyId: id,
+          price: newPrice
+        });
+
+        if (eventType) {
+          eventsToday.push({
+            companyId: id,
+            type: eventType,
+            priceChangePct: eventPct,
+            staticChangePct
+          });
+        }
+      }
+
+      db.currentDay = tomorrow;
+      generateDailyNews(tomorrow, eventsToday);
+      saveDB();
+      render();
+    }
+
+    // ---------- NEWS GENERATION (INCLUDES CATASTROPHES/WINDFALLS) ----------
+
+    function generateDailyNews(day, eventsToday = []) {
+      ensureStructure();
+      if (!db.dailyNews) db.dailyNews = {};
+      const yesterday = getYesterdayPrices(day);
+      const changes = [];
+
+      for (const id in db.companies) {
+        const c = db.companies[id];
+        if (!c.listed) continue;
+        const todayPrice = c.currentPrice;
+        const y = yesterday[id] ?? todayPrice;
+        const changePct = y === 0 ? 0 : (todayPrice / y - 1);
+        changes.push({
+          id,
+          name: c.name,
+          todayPrice,
+          changePct
+        });
+      }
+
+      if (!changes.length) {
+        db.dailyNews[day] = {
+          marketSummary: "No listed companies to report.",
+          gainers: [],
+          losers: [],
+          companyStories: [],
+          playerStories: []
+        };
+        return;
+      }
+
+      changes.sort((a, b) => b.changePct - a.changePct);
+      const gainers = changes.slice(0, 5);
+      const losers = [...changes].sort((a, b) => a.changePct - b.changePct).slice(0, 5);
+
+      const avgChange = changes.reduce((sum, c) => sum + c.changePct, 0) / (changes.length || 1);
+      const advancers = changes.filter(c => c.changePct > 0).length;
+      const decliners = changes.filter(c => c.changePct < 0).length;
+
+      const marketSummary =
+        `Market ${avgChange >= 0 ? "up" : "down"} ${(avgChange * 100).toFixed(2)}% with ` +
+        `${advancers} advancers and ${decliners} decliners on the Thrall Street Journal board.`;
+
+      const companyStories = [];
+
+      // Catastrophe / windfall stories first
+      if (eventsToday && eventsToday.length) {
+        eventsToday.forEach(ev => {
+          const c = db.companies[ev.companyId];
+          if (!c) return;
+          const move = Math.abs(ev.priceChangePct * 100).toFixed(2);
+          const statMove = Math.abs(ev.staticChangePct * 100).toFixed(1);
+          if (ev.type === "catastrophe") {
+            companyStories.push({
+              companyId: ev.companyId,
+              headline: `CATASTROPHE: ${c.name} crashes ${move}% in a single day; fundamentals cut by ${statMove}%.`
+            });
+          } else if (ev.type === "windfall") {
+            companyStories.push({
+              companyId: ev.companyId,
+              headline: `WINDFALL: ${c.name} explodes ${move}% on surprise good fortune; valuation rises ${statMove}%.`
+            });
+          }
+        });
+      }
+
+      // Then top gainer/loser stories
+      if (gainers[0]) {
+        const g = gainers[0];
+        companyStories.push({
+          companyId: g.id,
+          headline: `${g.name} leads gainers, up ${(g.changePct * 100).toFixed(2)}% in today's trading.`
+        });
+      }
+      if (losers[0]) {
+        const l = losers[0];
+        companyStories.push({
+          companyId: l.id,
+          headline: `${l.name} drags the board, falling ${(Math.abs(l.changePct) * 100).toFixed(2)}% on the day.`
+        });
+      }
+
+      db.dailyNews[day] = {
+        marketSummary,
+        gainers,
+        losers,
+        companyStories,
+        playerStories: []
+      };
+    }
+
+    // ---------- PRICE HISTORY / GRAPH ----------
+
+    function getPriceSeriesForCompany(companyId, maxPoints = 30) {
+      ensureStructure();
+      if (!db.priceHistory || !db.priceHistory.length) return [];
+      const rows = db.priceHistory
+        .filter(r => r.companyId === companyId)
+        .sort((a, b) => a.day - b.day);
+      if (!rows.length) return [];
+      const start = Math.max(0, rows.length - maxPoints);
+      return rows.slice(start).map(r => ({ day: r.day, price: r.price }));
+    }
+
+    function createLineChartElement(series, width = 600, height = 200) {
+      const svgNS = "http://www.w3.org/2000/svg";
+      const pad = 24;
+
+      const svg = document.createElementNS(svgNS, "svg");
+      svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+      svg.setAttribute("width", "100%");
+      svg.setAttribute("height", height);
+      svg.classList.add("chart");
+
+      const prices = series.map(s => s.price);
+      const minP = Math.min(...prices);
+      const maxP = Math.max(...prices);
+      const range = maxP - minP || 1;
+
+      const stepX = (width - 2 * pad) / Math.max(series.length - 1, 1);
+      const points = series.map((s, i) => {
+        const x = pad + i * stepX;
+        const norm = (s.price - minP) / range;
+        const y = pad + (height - 2 * pad) * (1 - norm);
+        return `${x},${y}`;
+      }).join(" ");
+
+      const axis = document.createElementNS(svgNS, "line");
+      axis.setAttribute("x1", pad);
+      axis.setAttribute("y1", height - pad);
+      axis.setAttribute("x2", width - pad);
+      axis.setAttribute("y2", height - pad);
+      axis.setAttribute("stroke", "rgba(160,170,200,0.4)");
+      axis.setAttribute("stroke-width", "1");
+      svg.appendChild(axis);
+
+      const poly = document.createElementNS(svgNS, "polyline");
+      poly.setAttribute("fill", "none");
+      poly.setAttribute("stroke", "#6cf");
+      poly.setAttribute("stroke-width", "2");
+      poly.setAttribute("points", points);
+      svg.appendChild(poly);
+
+      return svg;
+    }
+
+    // ---------- RENDER ----------
+
+    function render() {
+      ensureStructure();
+      document.getElementById("currentDay").textContent = db.currentDay;
+      const view = getView();
+
+      let label;
+      if (view === "news") label = "News";
+      else if (view === "edit") label = "Edit";
+      else label = "DM";
+      document.getElementById("viewName").textContent = label;
+
+      const speed = db.settings.tickerSpeedSeconds || 40;
+      document.documentElement.style.setProperty("--ticker-speed", speed + "s");
+
+      const app = document.getElementById("app");
+      app.innerHTML = "";
+
+      if (view === "news") {
+        renderNewsView(app);
+        renderTicker(true);
+      } else if (view === "edit") {
+        renderEditView(app);
+        renderTicker(false);
+      } else {
+        renderDMView(app);
+        renderTicker(false);
+      }
+    }
+
+    function renderDMView(app) {
+      ensureStructure();
+
+      const sectionControls = document.createElement("div");
+      sectionControls.className = "section";
+      sectionControls.innerHTML = `
+        <h2>DM Controls</h2>
+        <div>
+          <button id="btnAdvance">Advance Market Day</button>
+          <button id="btnResetDays">Reset Days & Wipe History</button>
+          <button id="btnExport">Export JSON</button>
+          <button id="btnImport">Import JSON</button>
+          <button id="btnOpenNews">Open News View</button>
+          <button id="btnOpenEdit">Open Edit View</button>
+        </div>
+        <div style="margin-top:0.5rem;">
+          <label style="font-size:0.9rem;">
+            Ticker Speed (seconds):
+            <input id="tickerSpeedInput" type="number" min="1" step="5"
+              value="${db.settings.tickerSpeedSeconds || 40}">
+          </label>
+        </div>
+        <p style="font-size:0.8rem;opacity:0.7;margin-top:0.4rem;">
+          Reset Days keeps current prices but clears price history and news, and sets the day back to 1.
+        </p>
+      `;
+      app.appendChild(sectionControls);
+
+      document.getElementById("btnAdvance").onclick = advanceMarketDay;
+      document.getElementById("btnResetDays").onclick = () => {
+        if (!confirm("Reset days to 1 and wipe price history/news?")) return;
+        db.currentDay = 1;
+        db.priceHistory = [];
+        db.dailyNews = {};
+        saveDB();
+        render();
+      };
+      document.getElementById("btnExport").onclick = exportJSON;
+      document.getElementById("btnImport").onclick = () => {
+        document.getElementById("fileInput").click();
+      };
+      document.getElementById("btnOpenNews").onclick = () => {
+        const url = window.location.href.split("?")[0] + "?view=news";
+        window.open(url, "_blank");
+      };
+      document.getElementById("btnOpenEdit").onclick = () => {
+        const url = window.location.href.split("?")[0] + "?view=edit";
+        window.open(url, "_blank");
+      };
+      document.getElementById("tickerSpeedInput").onchange = (e) => {
+        const val = parseInt(e.target.value, 10);
+        if (!isNaN(val) && val > 0) {
+          db.settings.tickerSpeedSeconds = val;
+          saveDB();
+          render();
+        }
+      };
+
+      // Companies list
+      const sectionList = document.createElement("div");
+      sectionList.className = "section";
+      sectionList.innerHTML = `<h2>Companies (current prices)</h2>`;
+
+      const table = document.createElement("table");
+      const thead = document.createElement("thead");
+      thead.innerHTML = `
+        <tr>
+          <th>Symbol</th>
+          <th>Name</th>
+          <th>Price</th>
+          <th>Vol</th>
+          <th>Last Change</th>
+          <th>Listed</th>
+        </tr>
+      `;
+      table.appendChild(thead);
+
+      const tbody = document.createElement("tbody");
+      for (const id in db.companies) {
+        const c = db.companies[id];
+        const tr = document.createElement("tr");
+        const change = c.lastModifiedPct ?? 0;
+        const sym = c.symbol || id;
+        tr.innerHTML = `
+          <td>${sym}</td>
+          <td>${c.name}</td>
+          <td>${formatGold(c.currentPrice)}</td>
+          <td>${c.volatilityTier}</td>
+          <td>${formatPct(change)}</td>
+          <td>
+            ${c.listed ? "Yes" : "No"}
+            <button class="toggleListedBtn" data-company-id="${id}" style="margin-left:0.25rem;font-size:0.7rem;padding:0.15rem 0.5rem;">
+              ${c.listed ? "Delist" : "Relist"}
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      }
+      table.appendChild(tbody);
+      sectionList.appendChild(table);
+      app.appendChild(sectionList);
+
+      table.querySelectorAll(".toggleListedBtn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const cid = btn.getAttribute("data-company-id");
+          const comp = db.companies[cid];
+          if (!comp) return;
+          comp.listed = !comp.listed;
+          saveDB();
+          render();
+        });
+      });
+    }
+
+    function renderNewsView(app) {
+      ensureStructure();
+      if (!db.dailyNews[db.currentDay]) {
+        generateDailyNews(db.currentDay);
+        saveDB();
+      }
+      const dayNews = db.dailyNews[db.currentDay];
+
+      const summarySection = document.createElement("div");
+      summarySection.className = "section";
+      summarySection.innerHTML = `
+        <h2>Thrall Street Journal – Day ${db.currentDay}</h2>
+        <div class="headline">
+          ${dayNews ? dayNews.marketSummary : "No market data for today yet."}
+        </div>
+      `;
+      app.appendChild(summarySection);
+
+      const storiesSection = document.createElement("div");
+      storiesSection.className = "section";
+      storiesSection.innerHTML = `<h2>Top Stories</h2>`;
+      if (dayNews && dayNews.companyStories.length) {
+        dayNews.companyStories.forEach(s => {
+          const div = document.createElement("div");
+          div.className = "headline";
+          div.textContent = s.headline;
+          storiesSection.appendChild(div);
+        });
+      } else {
+        const div = document.createElement("div");
+        div.className = "headline";
+        div.textContent = "Quiet day on the exchange.";
+        storiesSection.appendChild(div);
+      }
+      app.appendChild(storiesSection);
+
+      const tablesSection = document.createElement("div");
+      tablesSection.className = "section";
+      tablesSection.innerHTML = `<h2>Gainers & Losers</h2>`;
+      const wrapper = document.createElement("div");
+      wrapper.className = "flex-row";
+
+      const gainersTable = document.createElement("table");
+      let html = `
+        <thead><tr><th colspan="3">Top Gainers</th></tr>
+        <tr><th>Name</th><th>Price</th><th>Change</th></tr></thead><tbody>
+      `;
+      if (dayNews && dayNews.gainers.length) {
+        dayNews.gainers.forEach(g => {
+          html += `<tr>
+            <td>${g.name}</td>
+            <td>${formatGold(g.todayPrice)}</td>
+            <td>${formatPct(g.changePct)}</td>
+          </tr>`;
+        });
+      } else {
+        html += `<tr><td colspan="3" style="opacity:0.7;">No gainers.</td></tr>`;
+      }
+      html += `</tbody>`;
+      gainersTable.innerHTML = html;
+
+      const losersTable = document.createElement("table");
+      html = `
+        <thead><tr><th colspan="3">Top Losers</th></tr>
+        <tr><th>Name</th><th>Price</th><th>Change</th></tr></thead><tbody>
+      `;
+      if (dayNews && dayNews.losers.length) {
+        dayNews.losers.forEach(l => {
+          html += `<tr>
+            <td>${l.name}</td>
+            <td>${formatGold(l.todayPrice)}</td>
+            <td>${formatPct(l.changePct)}</td>
+          </tr>`;
+        });
+      } else {
+        html += `<tr><td colspan="3" style="opacity:0.7;">No losers.</td></tr>`;
+      }
+      html += `</tbody>`;
+      losersTable.innerHTML = html;
+
+      wrapper.appendChild(gainersTable);
+      wrapper.appendChild(losersTable);
+      tablesSection.appendChild(wrapper);
+      app.appendChild(tablesSection);
+
+      // Graph section: top gainer & top loser side by side
+      const graphSection = document.createElement("div");
+      graphSection.className = "section";
+      graphSection.innerHTML = `<h2>Price History – Top Gainer & Loser</h2>`;
+
+      const graphRow = document.createElement("div");
+      graphRow.className = "flex-row";
+
+      const gainerDiv = document.createElement("div");
+      if (dayNews && dayNews.gainers && dayNews.gainers[0]) {
+        const topG = dayNews.gainers[0];
+        const seriesG = getPriceSeriesForCompany(topG.id, 30);
+        if (seriesG.length) {
+          const label = document.createElement("div");
+          label.style.marginBottom = "0.25rem";
+          label.textContent = `${topG.name} (gainer, last ${seriesG.length} points)`;
+          gainerDiv.appendChild(label);
+
+          const svgG = createLineChartElement(seriesG);
+          gainerDiv.appendChild(svgG);
+        } else {
+          const msg = document.createElement("div");
+          msg.textContent = "No price history yet for top gainer.";
+          gainerDiv.appendChild(msg);
+        }
+      } else {
+        const msg = document.createElement("div");
+        msg.textContent = "No gainer available to graph.";
+        gainerDiv.appendChild(msg);
+      }
+
+      const loserDiv = document.createElement("div");
+      if (dayNews && dayNews.losers && dayNews.losers[0]) {
+        const topL = dayNews.losers[0];
+        const seriesL = getPriceSeriesForCompany(topL.id, 30);
+        if (seriesL.length) {
+          const label = document.createElement("div");
+          label.style.marginBottom = "0.25rem";
+          label.textContent = `${topL.name} (loser, last ${seriesL.length} points)`;
+          loserDiv.appendChild(label);
+
+          const svgL = createLineChartElement(seriesL);
+          loserDiv.appendChild(svgL);
+        } else {
+          const msg = document.createElement("div");
+          msg.textContent = "No price history yet for top loser.";
+          loserDiv.appendChild(msg);
+        }
+      } else {
+        const msg = document.createElement("div");
+        msg.textContent = "No loser available to graph.";
+        loserDiv.appendChild(msg);
+      }
+
+      graphRow.appendChild(gainerDiv);
+      graphRow.appendChild(loserDiv);
+      graphSection.appendChild(graphRow);
+      app.appendChild(graphSection);
+    }
+
+    // ---------- EDIT VIEW (TABLE/SPREADSHEET + RESIZABLE COLUMNS + SAVE) ----------
+
+    function renderEditView(app) {
+      ensureStructure();
+
+      const section = document.createElement("div");
+      section.className = "section";
+      section.innerHTML = `
+        <h2>Companies Editor</h2>
+        <p style="font-size:0.85rem;opacity:0.8;margin-bottom:0.5rem;">
+          Edit companies in-place. Click "Save Changes" to commit and use these prices as today's baseline for future % changes.
+        </p>
+        <div style="margin-bottom:0.5rem;">
+          <button id="btnAddCompany">Add Company</button>
+          <button id="btnSaveCompanies">Save Changes</button>
+          <button id="btnExportFromEdit">Export JSON</button>
+        </div>
+      `;
+      app.appendChild(section);
+
+      const table = document.createElement("table");
+      table.id = "editCompaniesTable";
+      table.style.tableLayout = "fixed";
+
+      const thead = document.createElement("thead");
+      thead.innerHTML = `
+        <tr>
+          <th>ID</th>
+          <th>Symbol</th>
+          <th>Name</th>
+          <th>Static Valuation</th>
+          <th>Current Price</th>
+          <th>Vol Tier</th>
+          <th>Cat/Wind Mod</th>
+          <th>Gravity Mod</th>
+          <th>Listed</th>
+          <th>Actions</th>
+        </tr>
+      `;
+      table.appendChild(thead);
+
+      const tbody = document.createElement("tbody");
+
+      for (const id in db.companies) {
+        const c = db.companies[id];
+        const tr = document.createElement("tr");
+
+        tr.innerHTML = `
+          <td>${id}</td>
+          <td>
+            <input class="edit-input editField" data-id="${id}" data-field="symbol"
+              type="text" value="${c.symbol || ""}">
+          </td>
+          <td>
+            <input class="edit-input editField" data-id="${id}" data-field="name"
+              type="text" value="${c.name || ""}">
+          </td>
+          <td>
+            <input class="edit-input editField" data-id="${id}" data-field="staticValuation"
+              type="number" step="0.01" value="${(c.staticValuation || 0).toFixed(2)}">
+          </td>
+          <td>
+            <input class="edit-input editField" data-id="${id}" data-field="currentPrice"
+              type="number" step="0.01" value="${(c.currentPrice || 0).toFixed(2)}">
+          </td>
+          <td>
+            <input class="edit-input editField" data-id="${id}" data-field="volatilityTier"
+              type="number" min="1" max="3" step="1" value="${c.volatilityTier || 2}">
+          </td>
+          <td>
+            <input class="edit-input editField" data-id="${id}" data-field="catWindMod"
+              type="number" step="0.01" value="${(c.catWindMod || 1).toFixed(2)}">
+          </td>
+          <td>
+            <input class="edit-input editField" data-id="${id}" data-field="gravityMod"
+              type="number" step="0.01" value="${(c.gravityMod || 1).toFixed(2)}">
+          </td>
+          <td style="text-align:center;">
+            <input class="edit-checkbox editListed" data-id="${id}" type="checkbox" ${c.listed ? "checked" : ""}>
+          </td>
+          <td>
+            <button class="deleteCompanyBtn" data-id="${id}" style="font-size:0.7rem;padding:0.15rem 0.5rem;">Delete</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      }
+
+      table.appendChild(tbody);
+      section.appendChild(table);
+
+      // Save button: commit edits and sync to priceHistory for current day
+      document.getElementById("btnSaveCompanies").onclick = () => {
+        const currDay = db.currentDay || 1;
+        const rows = tbody.querySelectorAll("tr");
+
+        rows.forEach(row => {
+          const id = row.children[0].textContent.trim();
+          if (!id) return;
+
+          let comp = db.companies[id] || { id };
+
+          const inputs = row.querySelectorAll(".editField");
+          inputs.forEach(input => {
+            const field = input.dataset.field;
+            let value = input.value;
+
+            if (["staticValuation", "currentPrice", "catWindMod", "gravityMod", "playerOwnedFraction"].includes(field)) {
+              const v = parseFloat(value);
+              if (isNaN(v)) return;
+              value = v;
+            } else if (field === "volatilityTier") {
+              const v = parseInt(value, 10);
+              if (isNaN(v)) return;
+              value = v;
+            }
+            comp[field] = value;
+          });
+
+          const checkbox = row.querySelector(".editListed");
+          comp.listed = checkbox ? checkbox.checked : true;
+
+          // Ensure required fields
+          if (comp.currentPrice === undefined || isNaN(comp.currentPrice)) {
+            comp.currentPrice = comp.staticValuation || 1;
+          }
+          if (comp.staticValuation === undefined || isNaN(comp.staticValuation)) {
+            comp.staticValuation = comp.currentPrice;
+          }
+
+          db.companies[id] = comp;
+
+          // Sync this as today's official price in priceHistory
+          if (!db.priceHistory) db.priceHistory = [];
+          let found = false;
+          for (let i = db.priceHistory.length - 1; i >= 0; i--) {
+            const r = db.priceHistory[i];
+            if (r.companyId === id && r.day === currDay) {
+              r.price = comp.currentPrice;
+              found = true;
+              break;
+            }
+          }
+          if (!found) {
+            db.priceHistory.push({
+              day: currDay,
+              companyId: id,
+              price: comp.currentPrice
+            });
+          }
+        });
+
+        saveDB();
+        render();
+      };
+
+document.getElementById("btnAddCompany").onclick = () => {
+  const newId = generateSequentialCompanyId();
+  db.companies[newId] = {
+    id: newId,
+    symbol: newId, // you can overwrite this in the editor
+    name: "New Company",
+    staticValuation: 100,
+    currentPrice: 100,
+    volatilityTier: 2,
+    catWindMod: 1,
+    gravityMod: 1,
+    playerOwnedFraction: 0,
+    listed: true,
+    lastChangePct: 0,
+    lastModifiedPct: 0,
+    lastChangeAmount: 0
+  };
+  saveDB();
+  render();
+};
+
+
+      document.getElementById("btnExportFromEdit").onclick = exportJSON;
+
+      section.querySelectorAll(".deleteCompanyBtn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const id = btn.dataset.id;
+          if (!confirm(`Delete company ${id}?`)) return;
+          delete db.companies[id];
+          saveDB();
+          render();
+        });
+      });
+
+      // Make columns resizable
+      makeTableColumnsResizable(table);
+    }
+
+    // ---------- COLUMN RESIZER LOGIC ----------
+
+    function makeTableColumnsResizable(table) {
+      const ths = table.querySelectorAll("thead th");
+
+      // Initialize widths
+      ths.forEach((th, index) => {
+        const initialWidth = th.offsetWidth;
+        th.style.width = initialWidth + "px";
+        table.querySelectorAll("tbody tr").forEach(tr => {
+          const cell = tr.children[index];
+          if (cell) {
+            cell.style.width = initialWidth + "px";
+          }
+        });
+      });
+
+      ths.forEach((th, index) => {
+        const resizer = document.createElement("div");
+        resizer.className = "col-resizer";
+        th.appendChild(resizer);
+
+        let startX, startWidth;
+
+        resizer.addEventListener("mousedown", (e) => {
+          e.preventDefault();
+          startX = e.pageX;
+          startWidth = th.offsetWidth;
+
+          const onMouseMove = (e2) => {
+            const dx = e2.pageX - startX;
+            const newWidth = Math.max(40, startWidth + dx);
+            th.style.width = newWidth + "px";
+            table.querySelectorAll("tbody tr").forEach(tr => {
+              const cell = tr.children[index];
+              if (cell) {
+                cell.style.width = newWidth + "px";
+              }
+            });
+          };
+
+          const onMouseUp = () => {
+            document.removeEventListener("mousemove", onMouseMove);
+            document.removeEventListener("mouseup", onMouseUp);
+          };
+
+          document.addEventListener("mousemove", onMouseMove);
+          document.addEventListener("mouseup", onMouseUp);
+        });
+      });
+    }
+
+    // ---------- TICKER ----------
+
+    function renderTicker(show) {
+      const ticker = document.getElementById("ticker");
+      if (!show) {
+        ticker.style.display = "none";
+        return;
+      }
+      ticker.style.display = "block";
+
+      const today = db.currentDay || 1;
+      const yesterday = getYesterdayPrices(today);
+      const items = [];
+
+      for (const id in db.companies) {
+        const c = db.companies[id];
+        if (!c.listed) continue;
+        const todayPrice = c.currentPrice;
+        const y = yesterday[id] ?? todayPrice;
+        const changePct = y === 0 ? 0 : (todayPrice / y - 1);
+        const cls = changePct > 0 ? "pos" : (changePct < 0 ? "neg" : "");
+        const sign = changePct > 0 ? "+" : "";
+        const sym = c.symbol || id;
+
+        items.push(
+          `<span style="margin-right:2rem;">
+            <strong>${sym}</strong> ${formatGold(todayPrice)}
+            <span class="${cls}">${sign}${(changePct * 100).toFixed(2)}%</span>
+          </span>`
+        );
+      }
+
+      document.getElementById("tickerInner").innerHTML = items.join("");
+    }
+
+    // ---------- EXPORT / IMPORT ----------
+
+    function exportJSON() {
+      ensureStructure();
+      const blob = new Blob([JSON.stringify(db, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "tessera_market.json";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    document.getElementById("fileInput").addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        try {
+          const data = JSON.parse(ev.target.result);
+          normalizeDB(data);
+          db = data;
+          saveDB();
+          render();
+        } catch (err) {
+          alert("Failed to import JSON: " + err);
+        }
+      };
+      reader.readAsText(file);
+      e.target.value = "";
+    });
+// ---------- CROSS-TAB SYNC ----------
+// When another tab saves the DB to localStorage, reload it here and re-render.
+window.addEventListener("storage", (e) => {
+  if (e.key === STORAGE_KEY && e.newValue) {
+    try {
+      const updated = JSON.parse(e.newValue);
+      normalizeDB(updated);
+      db = updated;
+      render();
+    } catch (err) {
+      console.error("Failed to sync DB from storage event", err);
+    }
+  }
+});
+
+    // ---------- INIT ----------
+
+    normalizeDB(db);
+    render();
+  </script>
+</body>
+</html>

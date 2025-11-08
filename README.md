@@ -1,5 +1,4 @@
-# dndstockmarket
-D&D Stock Market
+# D&D Stock Market
 
 A simple stock market I created for my D&D world. Why? I don't know, it was just a stupid idea that got stuck in my head one day.
 
@@ -26,3 +25,9 @@ Catastrophes and Windfalls - these are random, rare events that happen to compan
 Using in your adventure
 
 Use the edit tool to create companies. Once you've created your companies make sure you export your JSON file. keep it safe. Go to the DM screen and import the JSON file and you'll see your companies populate. Once you're playing make sure to press the "Advance Market Day" button every time a day passes in the players' world. Even if the players arent interacting with it, the market is always moving.
+
+[https://themonsterwith21faces.github.io/dndstockmarket/
+](https://themonsterwith21faces.github.io/dndstockmarket/)
+
+
+

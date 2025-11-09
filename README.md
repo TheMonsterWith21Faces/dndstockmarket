@@ -20,6 +20,8 @@ Cat/wind Mod - Catastrophe and Windfall Mod. Any value higher than 1 makes it mo
 Gravity mod - This is your gravity modifier. Gravity, in this case, is how aggressively prices try to catch up to their static valuation. If a valuation is 50 and a stock is at 100, then a gravity mod of 1 might see the stock drop by 7% trying to slowly normalize. if gravity is at 10 then you might see a drop of 44%, very quickly correcting itself.
 Listed - this just dictates whether or not this stock is listed and can be purchased.
 
+RNG will fill in the nubmers for you.
+
 Catastrophes and Windfalls - these are random, rare events that happen to companies where they experience a huge gain or loss in their stock price due to either a shortage, scandal, boom in popularity, etc. 
 
 Using in your adventure

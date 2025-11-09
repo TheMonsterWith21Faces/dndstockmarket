@@ -16,7 +16,6 @@
       --success: #58d58a;
       --ticker-speed: 40s;
     }
-
     * { box-sizing: border-box; }
 
     body {
@@ -38,7 +37,6 @@
       align-items: baseline;
       justify-content: space-between;
     }
-
     header h1 {
       margin: 0;
       font-size: 1.3rem;
@@ -46,7 +44,6 @@
       text-transform: uppercase;
       color: var(--accent);
     }
-
     header .meta {
       font-size: 0.85rem;
       color: var(--text-muted);
@@ -58,7 +55,6 @@
       justify-content: center;
       padding: 1rem;
     }
-
     #app {
       width: 100%;
       max-width: 1200px;
@@ -76,7 +72,6 @@
         inset 0 1px 0 rgba(255, 255, 255, 0.02);
       padding: 0.85rem 1rem 1rem;
     }
-
     .section h2 {
       margin: 0 0 0.6rem 0;
       font-size: 1rem;
@@ -95,7 +90,6 @@
       cursor: pointer;
       margin-right: 0.3rem;
     }
-
     button:hover { filter: brightness(1.1); }
     button:active { transform: translateY(1px); filter: brightness(0.95); }
 
@@ -107,7 +101,6 @@
       padding: 0.2rem 0.3rem;
       font-size: 0.85rem;
     }
-
     input[type="number"] { text-align: right; }
 
     table {
@@ -115,23 +108,20 @@
       border-collapse: collapse;
       font-size: 0.8rem;
     }
-
     th, td {
       padding: 0.3rem 0.35rem;
       border-bottom: 1px solid rgba(52, 56, 74, 0.7);
       text-align: left;
       white-space: nowrap;
     }
-
     th {
       font-weight: 600;
       color: var(--text-muted);
       font-size: 0.75rem;
       text-transform: uppercase;
       letter-spacing: 0.08em;
-      position: relative; /* for resizer */
+      position: relative;
     }
-
     tr:nth-child(even) td { background: rgba(18, 20, 32, 0.55); }
     tr:hover td { background: rgba(52, 56, 74, 0.4); }
 
@@ -140,7 +130,6 @@
 
     .headline { margin: 0.15rem 0; font-size: 0.9rem; }
 
-    /* Ticker */
     #ticker {
       border-top: 1px solid var(--border);
       background: radial-gradient(circle at 0 0, rgba(79, 213, 255, 0.12), #05050a);
@@ -153,13 +142,11 @@
       overflow: hidden;
       white-space: nowrap;
     }
-
     #tickerInner {
       display: inline-block;
       white-space: nowrap;
       animation: scrollTicker var(--ticker-speed) linear infinite;
     }
-
     @keyframes scrollTicker {
       from { transform: translateX(0); }
       to { transform: translateX(-100%); }
@@ -177,7 +164,6 @@
       gap: 1rem;
       flex-wrap: wrap;
     }
-
     .flex-row > * {
       flex: 1 1 0;
       min-width: 0;
@@ -188,12 +174,10 @@
       font-size: 0.78rem;
       padding: 0.15rem 0.25rem;
     }
-
     .edit-checkbox {
       transform: scale(1.1);
     }
 
-    /* Column resizer for edit table */
     .col-resizer {
       position: absolute;
       top: 0;
@@ -232,33 +216,6 @@
   <input type="file" id="fileInput" accept="application/json" style="display:none;" />
 
   <script>
-  
-  function generateSequentialCompanyId() {
-  ensureStructure();
-  const ids = Object.keys(db.companies || {});
-  let maxNum = 0;
-  let pad = 3; // default C001 style
-
-  ids.forEach(id => {
-    const m = /^C(\d+)$/.exec(id);
-    if (m) {
-      const num = parseInt(m[1], 10);
-      if (num > maxNum) {
-        maxNum = num;
-        pad = m[1].length; // keep same zero-padding as existing IDs
-      }
-    }
-  });
-
-  const next = maxNum + 1;
-  const padded = String(next).padStart(pad, "0");
-  return "C" + padded;
-}
-
-  
-  
-    // ---------- DB + STORAGE ----------
-
     const STORAGE_KEY = "tesseraStockMarketDBv1";
 
     const defaultDB = {
@@ -333,6 +290,7 @@
       for (const id in data.companies) {
         const c = data.companies[id];
         c.id = c.id || id;
+
         if (c.volatilityTier === undefined && c.volatility !== undefined) {
           c.volatilityTier = c.volatility;
         }
@@ -357,10 +315,15 @@
         if (c.lastChangeAmount === undefined) c.lastChangeAmount = 0;
 
         if (c.listed === undefined) c.listed = true;
+
+        if (c.totalShares === undefined || c.totalShares === null) {
+          c.totalShares = 100000;
+        }
+        if (c.availableShares === undefined || c.availableShares === null) {
+          c.availableShares = c.totalShares;
+        }
       }
     }
-
-    // ---------- UTILITIES ----------
 
     function getView() {
       const params = new URLSearchParams(window.location.search);
@@ -378,6 +341,10 @@
       return v.toFixed(2) + " gp";
     }
 
+    function formatInt(v) {
+      return Number.isFinite(v) ? v.toLocaleString("en-US") : "-";
+    }
+
     function getYesterdayPrices(day) {
       const map = {};
       const targetDay = day - 1;
@@ -390,34 +357,26 @@
       return map;
     }
 
-    // ---------- DAILY RANDOM PERCENT (BUCKET DISTRIBUTION) ----------
-
     function getDailyRandomPct() {
       const r = Math.random();
       let min, max;
 
       if (r < 0.80) {
-        // 80%: 0–5%
         min = 0.0;
         max = 0.05;
       } else if (r < 0.92) {
-        // 12%: 5–12%
         min = 0.05;
         max = 0.12;
       } else if (r < 0.98) {
-        // 6%: 12–23%
         min = 0.12;
         max = 0.23;
       } else if (r < 0.999) {
-        // 1.9%: 23–30.29%
         min = 0.23;
         max = 0.3029;
       } else if (r < 0.9999) {
-        // 0.09%: 30.30–182%
         min = 0.303;
         max = 1.82;
       } else {
-        // 0.01%: 182–726%
         min = 1.82;
         max = 7.26;
       }
@@ -426,8 +385,6 @@
       const sign = Math.random() < 0.5 ? -1 : 1;
       return sign * magnitude;
     }
-
-    // ---------- MARKET LOGIC (WITH CATASTROPHE / WINDFALL) ----------
 
     function advanceMarketDay() {
       ensureStructure();
@@ -439,7 +396,7 @@
           ? db.settings.meanReversionRate
           : 0.10;
 
-      const maxDailyMove = 7.26; // ±726% cap
+      const maxDailyMove = 7.26;
       const eventsToday = [];
 
       for (const id in db.companies) {
@@ -451,17 +408,14 @@
         const gravity = c.gravityMod || 1.0;
         const target = staticVal * gravity;
 
-        // Mean reversion towards target, based on percent diff vs current price
         let reversionPct = 0;
         if (oldPrice > 0) {
           const diffPct = (target - oldPrice) / oldPrice;
           reversionPct = meanReversionRate * diffPct;
         }
 
-        // Base random movement
         const baseNoise = getDailyRandomPct();
 
-        // Catastrophe / windfall event
         const catWindMod = c.catWindMod || 1.0;
         const catastropheProb = 0.001 * catWindMod;
         const windfallProb = 0.001 * catWindMod;
@@ -472,28 +426,24 @@
 
         if (roll < catastropheProb) {
           eventType = "catastrophe";
-          // big negative: 20–99%
           const mag = 0.20 + Math.random() * 0.79;
           eventPct = -mag;
           const statMag = 0.08 + Math.random() * 0.39;
           staticChangePct = -statMag;
         } else if (roll < catastropheProb + windfallProb) {
           eventType = "windfall";
-          // big positive: 20–99%
           const mag = 0.20 + Math.random() * 0.79;
           eventPct = mag;
           const statMag = 0.08 + Math.random() * 0.39;
           staticChangePct = statMag;
         }
 
-        // Apply static valuation change if event
         if (eventType) {
           const oldStatic = c.staticValuation || oldPrice;
           const newStatic = Math.max(0.01, oldStatic * (1 + staticChangePct));
           c.staticValuation = newStatic;
         }
 
-        // Total pct change
         let pctChange = reversionPct + baseNoise + eventPct;
 
         if (pctChange > maxDailyMove) pctChange = maxDailyMove;
@@ -528,11 +478,9 @@
       render();
     }
 
-    // ---------- NEWS GENERATION (INCLUDES CATASTROPHES/WINDFALLS) ----------
-
     function generateDailyNews(day, eventsToday = []) {
       ensureStructure();
-      if (!db.dailyNews) db.dailyNews = {};
+      if (!db.dailyNews[day]) db.dailyNews[day] = {};
       const yesterday = getYesterdayPrices(day);
       const changes = [];
 
@@ -575,7 +523,6 @@
 
       const companyStories = [];
 
-      // Catastrophe / windfall stories first
       if (eventsToday && eventsToday.length) {
         eventsToday.forEach(ev => {
           const c = db.companies[ev.companyId];
@@ -596,7 +543,6 @@
         });
       }
 
-      // Then top gainer/loser stories
       if (gainers[0]) {
         const g = gainers[0];
         companyStories.push({
@@ -620,8 +566,6 @@
         playerStories: []
       };
     }
-
-    // ---------- PRICE HISTORY / GRAPH ----------
 
     function getPriceSeriesForCompany(companyId, maxPoints = 30) {
       ensureStructure();
@@ -675,8 +619,6 @@
 
       return svg;
     }
-
-    // ---------- RENDER ----------
 
     function render() {
       ensureStructure();
@@ -765,7 +707,6 @@
         }
       };
 
-      // Companies list
       const sectionList = document.createElement("div");
       sectionList.className = "section";
       sectionList.innerHTML = `<h2>Companies (current prices)</h2>`;
@@ -779,6 +720,8 @@
           <th>Price</th>
           <th>Vol</th>
           <th>Last Change</th>
+          <th>Avail %</th>
+          <th>Shares for 51%</th>
           <th>Listed</th>
         </tr>
       `;
@@ -790,12 +733,21 @@
         const tr = document.createElement("tr");
         const change = c.lastModifiedPct ?? 0;
         const sym = c.symbol || id;
+
+        const totalShares = c.totalShares || 0;
+        const availableShares = c.availableShares || 0;
+        const availFrac = totalShares > 0 ? availableShares / totalShares : 0;
+        const availDisplay = (availFrac * 100).toFixed(1) + "%";
+        const sharesFor51 = Math.ceil(totalShares * 0.51);
+
         tr.innerHTML = `
           <td>${sym}</td>
           <td>${c.name}</td>
           <td>${formatGold(c.currentPrice)}</td>
           <td>${c.volatilityTier}</td>
           <td>${formatPct(change)}</td>
+          <td>${availDisplay}</td>
+          <td>${formatInt(sharesFor51)}</td>
           <td>
             ${c.listed ? "Yes" : "No"}
             <button class="toggleListedBtn" data-company-id="${id}" style="margin-left:0.25rem;font-size:0.7rem;padding:0.15rem 0.5rem;">
@@ -906,7 +858,6 @@
       tablesSection.appendChild(wrapper);
       app.appendChild(tablesSection);
 
-      // Graph section: top gainer & top loser side by side
       const graphSection = document.createElement("div");
       graphSection.className = "section";
       graphSection.innerHTML = `<h2>Price History – Top Gainer & Loser</h2>`;
@@ -966,7 +917,56 @@
       app.appendChild(graphSection);
     }
 
-    // ---------- EDIT VIEW (TABLE/SPREADSHEET + RESIZABLE COLUMNS + SAVE) ----------
+    function generateSequentialCompanyId() {
+      ensureStructure();
+      const ids = Object.keys(db.companies || {});
+      let maxNum = 0;
+      let pad = 3;
+
+      ids.forEach(id => {
+        const m = /^C(\d+)$/.exec(id);
+        if (m) {
+          const num = parseInt(m[1], 10);
+          if (num > maxNum) {
+            maxNum = num;
+            pad = m[1].length;
+          }
+        }
+      });
+
+      const next = maxNum + 1;
+      const padded = String(next).padStart(pad, "0");
+      return "C" + padded;
+    }
+
+    function randomInt(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function randomizeCompany(comp) {
+      // static valuation 0.73–283.34
+      const sv = 0.73 + Math.random() * (283.34 - 0.73);
+      comp.staticValuation = parseFloat(sv.toFixed(2));
+
+      // vol tier: 1 (60%), 2 (25%), 3 (15%)
+      const r = Math.random();
+      if (r < 0.60) comp.volatilityTier = 1;
+      else if (r < 0.85) comp.volatilityTier = 2;
+      else comp.volatilityTier = 3;
+
+      // gravity = 1
+      comp.gravityMod = 1;
+
+      // total shares 50k–500k
+      comp.totalShares = randomInt(50000, 500000);
+
+      // available shares 20–95% of total
+      const frac = 0.20 + Math.random() * (0.95 - 0.20);
+      comp.availableShares = Math.round(comp.totalShares * frac);
+
+      // start price at static valuation
+      comp.currentPrice = comp.staticValuation;
+    }
 
     function renderEditView(app) {
       ensureStructure();
@@ -976,11 +976,12 @@
       section.innerHTML = `
         <h2>Companies Editor</h2>
         <p style="font-size:0.85rem;opacity:0.8;margin-bottom:0.5rem;">
-          Edit companies in-place. Click "Save Changes" to commit and use these prices as today's baseline for future % changes.
+          Edit companies in-place. "Save Changes" overwrites reality, including today's starting prices.
         </p>
         <div style="margin-bottom:0.5rem;">
           <button id="btnAddCompany">Add Company</button>
           <button id="btnSaveCompanies">Save Changes</button>
+          <button id="btnRandomizeAll">Randomize All</button>
           <button id="btnExportFromEdit">Export JSON</button>
         </div>
       `;
@@ -993,14 +994,15 @@
       const thead = document.createElement("thead");
       thead.innerHTML = `
         <tr>
-          <th>ID</th>
           <th>Symbol</th>
           <th>Name</th>
           <th>Static Valuation</th>
           <th>Current Price</th>
           <th>Vol Tier</th>
           <th>Cat/Wind Mod</th>
-          <th>Gravity Mod</th>
+          <th>Gravity</th>
+          <th>Available Shares</th>
+          <th>Total Shares</th>
           <th>Listed</th>
           <th>Actions</th>
         </tr>
@@ -1012,9 +1014,9 @@
       for (const id in db.companies) {
         const c = db.companies[id];
         const tr = document.createElement("tr");
+        tr.dataset.id = id;
 
         tr.innerHTML = `
-          <td>${id}</td>
           <td>
             <input class="edit-input editField" data-id="${id}" data-field="symbol"
               type="text" value="${c.symbol || ""}">
@@ -1043,10 +1045,19 @@
             <input class="edit-input editField" data-id="${id}" data-field="gravityMod"
               type="number" step="0.01" value="${(c.gravityMod || 1).toFixed(2)}">
           </td>
+          <td>
+            <input class="edit-input editField" data-id="${id}" data-field="availableShares"
+              type="number" step="1" value="${c.availableShares || 0}">
+          </td>
+          <td>
+            <input class="edit-input editField" data-id="${id}" data-field="totalShares"
+              type="number" step="1" value="${c.totalShares || 0}">
+          </td>
           <td style="text-align:center;">
             <input class="edit-checkbox editListed" data-id="${id}" type="checkbox" ${c.listed ? "checked" : ""}>
           </td>
           <td>
+            <button class="rngCompanyBtn" data-id="${id}" style="font-size:0.7rem;padding:0.15rem 0.5rem;">RNG</button>
             <button class="deleteCompanyBtn" data-id="${id}" style="font-size:0.7rem;padding:0.15rem 0.5rem;">Delete</button>
           </td>
         `;
@@ -1056,13 +1067,12 @@
       table.appendChild(tbody);
       section.appendChild(table);
 
-      // Save button: commit edits and sync to priceHistory for current day
       document.getElementById("btnSaveCompanies").onclick = () => {
         const currDay = db.currentDay || 1;
         const rows = tbody.querySelectorAll("tr");
 
         rows.forEach(row => {
-          const id = row.children[0].textContent.trim();
+          const id = row.dataset.id;
           if (!id) return;
 
           let comp = db.companies[id] || { id };
@@ -1072,7 +1082,15 @@
             const field = input.dataset.field;
             let value = input.value;
 
-            if (["staticValuation", "currentPrice", "catWindMod", "gravityMod", "playerOwnedFraction"].includes(field)) {
+            if ([
+              "staticValuation",
+              "currentPrice",
+              "catWindMod",
+              "gravityMod",
+              "playerOwnedFraction",
+              "totalShares",
+              "availableShares"
+            ].includes(field)) {
               const v = parseFloat(value);
               if (isNaN(v)) return;
               value = v;
@@ -1087,7 +1105,6 @@
           const checkbox = row.querySelector(".editListed");
           comp.listed = checkbox ? checkbox.checked : true;
 
-          // Ensure required fields
           if (comp.currentPrice === undefined || isNaN(comp.currentPrice)) {
             comp.currentPrice = comp.staticValuation || 1;
           }
@@ -1095,9 +1112,15 @@
             comp.staticValuation = comp.currentPrice;
           }
 
+          if (typeof comp.totalShares !== "number" || isNaN(comp.totalShares)) {
+            comp.totalShares = 0;
+          }
+          if (typeof comp.availableShares !== "number" || isNaN(comp.availableShares)) {
+            comp.availableShares = 0;
+          }
+
           db.companies[id] = comp;
 
-          // Sync this as today's official price in priceHistory
           if (!db.priceHistory) db.priceHistory = [];
           let found = false;
           for (let i = db.priceHistory.length - 1; i >= 0; i--) {
@@ -1121,27 +1144,36 @@
         render();
       };
 
-document.getElementById("btnAddCompany").onclick = () => {
-  const newId = generateSequentialCompanyId();
-  db.companies[newId] = {
-    id: newId,
-    symbol: newId, // you can overwrite this in the editor
-    name: "New Company",
-    staticValuation: 100,
-    currentPrice: 100,
-    volatilityTier: 2,
-    catWindMod: 1,
-    gravityMod: 1,
-    playerOwnedFraction: 0,
-    listed: true,
-    lastChangePct: 0,
-    lastModifiedPct: 0,
-    lastChangeAmount: 0
-  };
-  saveDB();
-  render();
-};
+      document.getElementById("btnAddCompany").onclick = () => {
+        const newId = generateSequentialCompanyId();
+        db.companies[newId] = {
+          id: newId,
+          symbol: newId,
+          name: "New Company",
+          staticValuation: 100,
+          currentPrice: 100,
+          volatilityTier: 2,
+          catWindMod: 1,
+          gravityMod: 1,
+          playerOwnedFraction: 0,
+          listed: true,
+          totalShares: 100000,
+          availableShares: 100000,
+          lastChangePct: 0,
+          lastModifiedPct: 0,
+          lastChangeAmount: 0
+        };
+        saveDB();
+        render();
+      };
 
+      document.getElementById("btnRandomizeAll").onclick = () => {
+        for (const id in db.companies) {
+          randomizeCompany(db.companies[id]);
+        }
+        saveDB();
+        render();
+      };
 
       document.getElementById("btnExportFromEdit").onclick = exportJSON;
 
@@ -1155,16 +1187,23 @@ document.getElementById("btnAddCompany").onclick = () => {
         });
       });
 
-      // Make columns resizable
+      section.querySelectorAll(".rngCompanyBtn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const id = btn.dataset.id;
+          const comp = db.companies[id];
+          if (!comp) return;
+          randomizeCompany(comp);
+          saveDB();
+          render();
+        });
+      });
+
       makeTableColumnsResizable(table);
     }
-
-    // ---------- COLUMN RESIZER LOGIC ----------
 
     function makeTableColumnsResizable(table) {
       const ths = table.querySelectorAll("thead th");
 
-      // Initialize widths
       ths.forEach((th, index) => {
         const initialWidth = th.offsetWidth;
         th.style.width = initialWidth + "px";
@@ -1211,8 +1250,6 @@ document.getElementById("btnAddCompany").onclick = () => {
       });
     }
 
-    // ---------- TICKER ----------
-
     function renderTicker(show) {
       const ticker = document.getElementById("ticker");
       if (!show) {
@@ -1246,8 +1283,6 @@ document.getElementById("btnAddCompany").onclick = () => {
       document.getElementById("tickerInner").innerHTML = items.join("");
     }
 
-    // ---------- EXPORT / IMPORT ----------
-
     function exportJSON() {
       ensureStructure();
       const blob = new Blob([JSON.stringify(db, null, 2)], { type: "application/json" });
@@ -1279,22 +1314,19 @@ document.getElementById("btnAddCompany").onclick = () => {
       reader.readAsText(file);
       e.target.value = "";
     });
-// ---------- CROSS-TAB SYNC ----------
-// When another tab saves the DB to localStorage, reload it here and re-render.
-window.addEventListener("storage", (e) => {
-  if (e.key === STORAGE_KEY && e.newValue) {
-    try {
-      const updated = JSON.parse(e.newValue);
-      normalizeDB(updated);
-      db = updated;
-      render();
-    } catch (err) {
-      console.error("Failed to sync DB from storage event", err);
-    }
-  }
-});
 
-    // ---------- INIT ----------
+    window.addEventListener("storage", (e) => {
+      if (e.key === STORAGE_KEY && e.newValue) {
+        try {
+          const updated = JSON.parse(e.newValue);
+          normalizeDB(updated);
+          db = updated;
+          render();
+        } catch (err) {
+          console.error("Failed to sync DB from storage event", err);
+        }
+      }
+    });
 
     normalizeDB(db);
     render();
